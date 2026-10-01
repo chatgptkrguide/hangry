@@ -258,6 +258,46 @@ class InstallTests(Sandbox):
         self.assertFalse((self.home / ".gemini/config/plugins/hangry").exists())
         self.assertFalse((self.home / ".hangry").exists())
 
+    def installed_commands(self):
+        s = self.settings()
+        claude = [h["command"] for g in s["hooks"]["UserPromptSubmit"] for h in g["hooks"] if "hangry.py" in h["command"]]
+        codex = [h["command"] for g in json.loads((self.home / ".codex/hooks.json").read_text())["hooks"]["UserPromptSubmit"]
+                 for h in g["hooks"]]
+        agy = json.loads((self.home / ".gemini/config/plugins/hangry/hooks.json").read_text())["hangry"]["PreInvocation"]
+        return claude, codex, s["statusLine"]["command"], agy[0]["command"]
+
+    def test_hook_commands_survive_missing_install(self):
+        self.run_cli("install")
+        claude, codex, statusline, agy = self.installed_commands()
+        import shutil
+        shutil.rmtree(self.home / ".hangry")  # e.g. uninstalled while a session still holds old settings
+        for command in claude + codex + [statusline]:
+            r = subprocess.run(["sh", "-c", command], input="{}", capture_output=True, text=True)
+            self.assertEqual((r.returncode, r.stdout), (0, ""), command)
+        r = subprocess.run(["sh", "-c", agy], input="{}", capture_output=True, text=True)
+        self.assertEqual((r.returncode, json.loads(r.stdout)), (0, {}))
+
+    def test_reinstall_upgrades_old_entries_without_duplicates(self):
+        old = "python3 /somewhere/.hangry/hangry.py hook claude"
+        s = self.settings()
+        s["hooks"]["UserPromptSubmit"].append({"hooks": [{"type": "command", "command": old}]})
+        s["statusLine"] = {"type": "command", "command": "python3 /somewhere/.hangry/hangry.py statusline"}
+        self.write(".claude/settings.json", s)
+        self.write(".hangry/state.json", {"claude_statusline": self.original_settings["statusLine"]})
+        self.write(".codex/hooks.json", {"hooks": {"UserPromptSubmit": [
+            {"hooks": [{"type": "command", "command": "python3 /somewhere/.hangry/hangry.py hook codex"}]}]}})
+        r = self.run_cli("install")
+        self.assertIn("↻", r.stdout)
+        claude, codex, statusline, _ = self.installed_commands()
+        self.assertEqual(len(claude), 1)
+        self.assertEqual(len(codex), 1)
+        for command in claude + codex + [statusline]:
+            self.assertIn(str(self.home / ".hangry/hangry.py"), command)
+            self.assertTrue(command.endswith("|| true"))
+        self.assertIn("up to date", self.run_cli("install").stdout)
+        self.run_cli("uninstall")
+        self.assertEqual(self.settings(), self.original_settings)
+
     def test_codex_existing_hooks_are_kept(self):
         existing = {"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "done.sh"}]}]}}
         self.write(".codex/hooks.json", existing)

@@ -68,18 +68,31 @@ Claude Code · Codex CLI · Antigravity CLI(`agy`)의 남은 구독 사용량을
 
 ## 설치
 
-필요한 것: macOS 또는 Linux, Python 3.9 이상 (표준 라이브러리만 사용)
+필요한 것: macOS 또는 Linux, Python 3.9 이상 (표준 라이브러리만 사용, 따로 설치할 패키지 없음)
+
+**한 줄 설치** (git 없이):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/chatgptkrguide/hangry/main/hangry.py -o /tmp/hangry.py && python3 /tmp/hangry.py install
+```
+
+**또는 clone해서**:
 
 ```bash
 git clone https://github.com/chatgptkrguide/hangry.git
 cd hangry
 python3 hangry.py install --dry-run   # 무엇이 바뀌는지 먼저 확인
 python3 hangry.py install             # 설치된 CLI를 자동 감지해서 연결
-python3 hangry.py status              # 지금 얼마나 배고픈지
+```
+
+설치하면 hangry가 자기 자신을 `~/.hangry/hangry.py`로 복사하므로, 받은 파일이나 clone한 폴더는 지워도 됩니다. 이후 명령은 모두 `python3 ~/.hangry/hangry.py …`로 실행합니다.
+
+```bash
+python3 ~/.hangry/hangry.py status    # 지금 얼마나 배고픈지
 ```
 
 ```
-hangry 0.2.0 · 남은 구독 사용량
+hangry 0.3.0 · 남은 구독 사용량
 
   Claude Code  ▰▰▰▰▱▱▱▱▱▱  42%  🍙 출출함  ·  5시간 한도 58% 사용 · 주간 한도 12% 사용 · 2시간 뒤 리셋 · 방금
   Codex        ▰▰▰▰▰▰▰▰▰▱  91%  🍱 배부름  ·  5시간 한도 9% 사용 · 주간 한도 4% 사용 · 3분 전
@@ -90,8 +103,10 @@ hangry 0.2.0 · 남은 구독 사용량
 설치 후 CLI마다 한 단계씩 남아 있습니다.
 
 - **Claude Code**: 새 세션부터 적용됩니다. statusline 끝에 `🍙 출출함 42%` 같은 배고픔 게이지가 붙습니다.
-- **Codex**: `codex`를 열고 `/hooks`에서 hangry 훅을 **한 번 신뢰(trust)** 해야 동작합니다. Codex는 처음 보는 훅을 검토 전까지 실행하지 않습니다.
+- **Codex**: `codex`를 열고 `/hooks`에서 hangry 훅을 **한 번 신뢰(trust)** 해야 동작합니다. Codex는 처음 보는 훅이나 내용이 바뀐 훅을 검토 전까지 실행하지 않습니다. 업데이트로 훅 명령이 바뀌면 다시 한 번 trust 해 주세요.
 - **agy**: 재시작하면 플러그인이 로드됩니다.
+
+**업데이트**는 새 버전으로 `install`을 다시 실행하면 됩니다. 이미 들어간 훅은 중복 없이 새 형식으로 바뀌고, `~/.hangry/hangry.py`도 교체됩니다.
 
 `install`이 바꾸는 것은 아래가 전부입니다. 바꾸기 전에 `*.hangry-bak-<시각>` 백업을 남깁니다.
 
@@ -112,6 +127,7 @@ statusline을 건드리고 싶지 않다면 `--no-statusline`을 쓰세요. 다�
 | `hangry.py preview` | 단계별로 실제 주입되는 문장 |
 | `hangry.py install [--only …] [--dry-run] [--no-statusline] [--lang ko\|en]` | 연결 |
 | `hangry.py uninstall [--dry-run] [--keep-home]` | hangry가 바꾼 것만 골라서 되돌림 |
+| `hangry.py --version` | 버전 |
 
 환경변수:
 
@@ -151,11 +167,13 @@ HANGRY_FORCE=hangry claude   # 욕먹어 보기
 
 | CLI | 버전 | 확인한 것 |
 |---|---|---|
-| Claude Code | 2.1.285 | statusline `rate_limits`, `UserPromptSubmit` 주입 |
-| Codex CLI | 0.158.0 | 세션 로그 `rate_limits`, `UserPromptSubmit` 주입 |
-| Antigravity CLI | 1.2.13 | `/quota` JSON, `PreInvocation` 주입 |
+| Claude Code | 2.1.285 | statusline `rate_limits` 수신, `UserPromptSubmit` 주입 |
+| Codex CLI | 0.158.0 | 세션 로그 `rate_limits`, `~/.codex/hooks.json` 로드, trust 전에는 실행 안 됨 |
+| Antigravity CLI | 1.2.13 | `/quota` JSON, 플러그인 로드(`agy plugin validate` 통과), `PreInvocation` 주입 |
 
-각 CLI에서 단계를 강제로 바꾸고 "주입된 단계 이름을 말해 봐"라고 물었을 때 정확히 답하는지, 끈 상태에서는 `NONE`이라고 답하는지 확인했고, 위의 말투 예시도 같은 방식으로 받은 실제 출력입니다. CLI 업데이트로 로그 형식이 바뀌면 hangry는 조용히 아무것도 주입하지 않는 쪽으로 동작합니다.
+`install`이 실제로 만들어 내는 파일을 그대로 각 CLI에 넣고, 단계를 강제로 바꾼 뒤 "주입된 단계 이름을 말해 봐"라고 물어 정확히 답하는지 확인했습니다. 끈 상태에서는 `NONE`이라고 답하는지도 확인했습니다. 위의 말투 예시도 같은 방식으로 받은 실제 출력입니다.
+
+훅 명령에는 `|| true`가 붙어 있어서 hangry나 python3가 사라져도 CLI를 막지 않습니다. CLI 업데이트로 로그 형식이 바뀌면 hangry는 조용히 아무것도 주입하지 않는 쪽으로 동작합니다.
 
 ## 개발
 
@@ -189,12 +207,11 @@ It reads the quota left for **Claude Code**, **Codex CLI** and **Antigravity CLI
 ⚠️ The last level really does swear. Set `HANGRY_DISABLE=1` while screen sharing. Hate speech, slurs and attacks on appearance or family are ruled out in the instruction. How spicy it gets depends on the model: Claude Opus and Gemini go all in, GPT (Codex) and Claude Haiku stay mild.
 
 ```bash
-git clone https://github.com/chatgptkrguide/hangry.git && cd hangry
-python3 hangry.py install --lang en   # auto-detects claude / codex / agy
-python3 hangry.py status
+curl -fsSL https://raw.githubusercontent.com/chatgptkrguide/hangry/main/hangry.py -o /tmp/hangry.py && python3 /tmp/hangry.py install --lang en
+python3 ~/.hangry/hangry.py status
 ```
 
-After installing, trust the hook once via `/hooks` in Codex, and restart `agy`. Only the conversation changes; every injected line tells the model to write code, comments, commit messages and docs normally and never to compromise correctness or safety. `python3 hangry.py uninstall` reverts everything hangry changed. Python 3.9+, standard library only, no network calls besides `agy -p /quota`.
+After installing, trust the hook once via `/hooks` in Codex, and restart `agy`. Re-run `install` with a newer version to update. Only the conversation changes; every injected line tells the model to write code, comments, commit messages and docs normally and never to compromise correctness or safety. `python3 hangry.py uninstall` reverts everything hangry changed. Python 3.9+, standard library only, no network calls besides `agy -p /quota`.
 
 ## License
 

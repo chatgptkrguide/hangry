@@ -23,7 +23,7 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 MARKER = "hangry.py"  # substring that identifies our entries in foreign configs
 AGY_TTL = 300  # seconds an agy quota snapshot stays fresh
 LOCK_TTL = 90  # seconds before a leftover refresh lock is ignored
@@ -56,7 +56,8 @@ TEXT = {
         "forced_note": "HANGRY_FORCE={v} 로 강제 설정 중",
         "preview_title": "단계별로 매 턴 주입되는 문장 미리보기",
         "install_done": "✓ {cli:<12} {what}  ({path})",
-        "install_skip": "· {cli:<12} 이미 설치됨",
+        "install_skip": "· {cli:<12} 이미 최신",
+        "install_updated": "↻ {cli:<12} 최신 버전으로 갱신  ({path})",
         "install_fail": "✗ {cli:<12} {why}",
         "hook_added": "훅 추가",
         "statusline_added": "훅 + statusline 연결",
@@ -67,6 +68,7 @@ TEXT = {
         "note_agy": "  └ agy를 재시작하면 적용됩니다",
         "no_targets": "설치된 CLI를 찾지 못했습니다 (claude / codex / agy)",
         "dry_run": "(dry-run: 실제로는 아무것도 바꾸지 않았습니다)",
+        "next": "\n다음 명령:\n  python3 {p} status     지금 얼마나 배고픈지\n  python3 {p} preview    단계별 말투 미리보기\n  python3 {p} uninstall  전부 되돌리기\n  HANGRY_DISABLE=1 로 실행하면 잠깐 끌 수 있습니다 (화면 공유할 때)",
         "uninstall_done": "✓ {cli:<12} 제거  ({path})",
         "uninstall_home": "✓ {path} 삭제",
         "nothing": "제거할 것이 없습니다",
@@ -93,7 +95,8 @@ TEXT = {
         "forced_note": "forced by HANGRY_FORCE={v}",
         "preview_title": "What gets injected every turn, per level",
         "install_done": "✓ {cli:<12} {what}  ({path})",
-        "install_skip": "· {cli:<12} already installed",
+        "install_skip": "· {cli:<12} already up to date",
+        "install_updated": "↻ {cli:<12} updated  ({path})",
         "install_fail": "✗ {cli:<12} {why}",
         "hook_added": "hook added",
         "statusline_added": "hook + statusline wired",
@@ -104,6 +107,7 @@ TEXT = {
         "note_agy": "  └ restart agy to apply",
         "no_targets": "no supported CLI found (claude / codex / agy)",
         "dry_run": "(dry-run: nothing was changed)",
+        "next": "\nNext:\n  python3 {p} status     how hungry each CLI is\n  python3 {p} preview    every tone level\n  python3 {p} uninstall  revert everything\n  run a CLI with HANGRY_DISABLE=1 to switch hangry off for a while (screen sharing)",
         "uninstall_done": "✓ {cli:<12} removed  ({path})",
         "uninstall_home": "✓ removed {path}",
         "nothing": "nothing to remove",
@@ -639,9 +643,10 @@ def cmd_preview() -> int:
 
 # ----------------------------------------------------------- install/remove
 
-def hook_command(dest: Path, *args: str) -> str:
+def hook_command(dest: Path, *args: str, fallback: str = "true") -> str:
+    """Shell command for a hook that succeeds even if hangry or python3 has gone missing."""
     python = shutil.which("python3") or sys.executable
-    return " ".join([shlex.quote(python), shlex.quote(str(dest)), *args])
+    return " ".join([shlex.quote(python), shlex.quote(str(dest)), *args, "2>/dev/null ||", fallback])
 
 
 def has_marker(groups) -> bool:
@@ -677,29 +682,35 @@ def install_claude(dest: Path, state: dict, statusline: bool, dry: bool, t: dict
     settings = read_json(path) if path.exists() else {}
     if not isinstance(settings, dict):
         return t["install_fail"].format(cli="Claude Code", why=t["bad_json"].format(path=tilde(path)))
-    changed = False
     hooks = settings.setdefault("hooks", {})
     submit = hooks.setdefault("UserPromptSubmit", []) if isinstance(hooks, dict) else None
     if not isinstance(submit, list):
         return t["install_fail"].format(cli="Claude Code", why=t["bad_json"].format(path=tilde(path)))
-    if not has_marker(submit):
-        submit.append({"hooks": [{"type": "command", "command": hook_command(dest, "hook", "claude"), "timeout": 10}]})
-        changed = True
+    added = updated = False
+    entry = {"hooks": [{"type": "command", "command": hook_command(dest, "hook", "claude"), "timeout": 10}]}
+    if entry not in submit:
+        updated, added = has_marker(submit), not has_marker(submit)
+        submit[:] = strip_marker(submit) + [entry]
     current = settings.get("statusLine")
-    wired = isinstance(current, dict) and MARKER in str(current.get("command", ""))
-    if statusline and not wired:
+    tap_command = hook_command(dest, "statusline")
+    if statusline and isinstance(current, dict) and MARKER in str(current.get("command", "")):
+        if current.get("command") != tap_command:
+            current["command"] = tap_command
+            updated = True
+    elif statusline:
         state["claude_statusline"] = current if isinstance(current, dict) else None
-        state["claude_statusline_managed"] = True
-        tap = {"type": "command", "command": hook_command(dest, "statusline")}
+        tap = {"type": "command", "command": tap_command}
         if isinstance(current, dict) and "padding" in current:
             tap["padding"] = current["padding"]
         settings["statusLine"] = tap
-        changed = True
-    if not changed:
+        added = True
+    if not (added or updated):
         return t["install_skip"].format(cli="Claude Code")
     if not dry:
         backup(path)
         write_json(path, settings)
+    if not added:
+        return t["install_updated"].format(cli="Claude Code", path=tilde(path))
     what = t["statusline_added"] if statusline else t["hook_added"]
     return t["install_done"].format(cli="Claude Code", what=what, path=tilde(path))
 
@@ -713,21 +724,26 @@ def install_codex(dest: Path, state: dict, dry: bool, t: dict) -> str:
     submit = doc["hooks"].setdefault("UserPromptSubmit", [])
     if not isinstance(submit, list):
         return t["install_fail"].format(cli="Codex", why=t["bad_json"].format(path=tilde(path)))
-    if has_marker(submit):
+    entry = {"hooks": [{"type": "command", "command": hook_command(dest, "hook", "codex"), "timeout": 10}]}
+    if entry in submit:
         return t["install_skip"].format(cli="Codex")
-    submit.append({"hooks": [{"type": "command", "command": hook_command(dest, "hook", "codex"), "timeout": 10}]})
+    upgrading = has_marker(submit)
+    submit[:] = strip_marker(submit) + [entry]
     state.setdefault("codex_hooks_created", not existed)
     if not dry:
         backup(path)
         write_json(path, doc)
+    if upgrading:
+        return t["install_updated"].format(cli="Codex", path=tilde(path))
     return t["install_done"].format(cli="Codex", what=t["hook_added"], path=tilde(path))
 
 
 def install_agy(dest: Path, dry: bool, t: dict) -> str:
     plugin = agy_plugin_dir()
     hooks = {"hangry": {"PreInvocation": [
-        {"type": "command", "command": hook_command(dest, "hook", "agy"), "timeout": 10}]}}
-    if read_json(plugin / "hooks.json") == hooks:
+        {"type": "command", "command": hook_command(dest, "hook", "agy", fallback="echo '{}'"), "timeout": 10}]}}
+    existing = read_json(plugin / "hooks.json")
+    if existing == hooks:
         return t["install_skip"].format(cli="agy")
     if not dry:
         write_json(plugin / "plugin.json", {
@@ -737,6 +753,8 @@ def install_agy(dest: Path, dry: bool, t: dict) -> str:
             "version": VERSION,
         })
         write_json(plugin / "hooks.json", hooks)
+    if existing is not None:
+        return t["install_updated"].format(cli="agy", path=tilde(plugin))
     return t["install_done"].format(cli="agy", what=t["plugin_added"], path=tilde(plugin))
 
 
@@ -778,6 +796,8 @@ def cmd_install(only, dry: bool, statusline: bool, lang) -> int:
     print("\n".join(notes))
     if dry:
         print(t["dry_run"])
+    else:
+        print(t["next"].format(p=tilde(dest)))
     return 0
 
 
