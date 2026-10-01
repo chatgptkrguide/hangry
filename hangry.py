@@ -23,7 +23,7 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 MARKER = "hangry.py"  # substring that identifies our entries in foreign configs
 AGY_TTL = 300  # seconds an agy quota snapshot stays fresh
 LOCK_TTL = 90  # seconds before a leftover refresh lock is ignored
@@ -443,13 +443,23 @@ def spawn_agy_refresh() -> None:
         pass
 
 
+def clean_label(value, limit: int = 40) -> str:
+    """Anything server-provided that reaches the model's context stays short and plain."""
+    text = "".join(c for c in str(value or "") if c.isalnum() or c in " .+-()/")
+    return " ".join(text.split())[:limit]
+
+
+def is_third_party_group(group: dict) -> bool:
+    text = f"{group.get('name', '')} {group.get('description', '')}".lower()
+    return "claude" in text or "gpt" in text
+
+
 def pick_agy_group(groups: list, model_name):
     """agy meters Gemini models and third-party (Claude/GPT) models separately."""
     wants_3p = any(k in (model_name or "").lower() for k in ("claude", "gpt", "opus", "sonnet", "haiku"))
     usable = [g for g in groups if isinstance(g, dict)]
     for g in usable:
-        text = f"{g.get('name', '')} {g.get('description', '')}".lower()
-        if ("claude" in text or "gpt" in text) == wants_3p:
+        if is_third_party_group(g) == wants_3p:
             return g
     return usable[0] if usable else None
 
@@ -469,8 +479,9 @@ def read_agy(now: float, model_name=None, refresh: bool = True):
         fraction = num(bucket.get("remaining_fraction")) if isinstance(bucket, dict) else None
         if fraction is None or bucket.get("disabled"):
             continue
-        kind = "7d" if bucket.get("window") == "weekly" else str(bucket.get("window") or "?")
-        windows.append({"kind": kind, "scope": group.get("name"), "used": 100.0 - fraction * 100.0,
+        kind = "7d" if bucket.get("window") == "weekly" else clean_label(bucket.get("window"), 12) or "?"
+        scope = "Claude/GPT" if is_third_party_group(group) else "Gemini"
+        windows.append({"kind": kind, "scope": scope, "used": 100.0 - fraction * 100.0,
                         "resets_at": iso_to_epoch(bucket.get("reset_time"))})
     return summarize("agy", windows, num(data.get("saved_at")), now)
 

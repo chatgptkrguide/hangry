@@ -60,12 +60,13 @@ Claude Code, Codex CLI, Antigravity CLI(`agy`)에 붙이는 작은 훅입니다.
 ### 1. 설치
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chatgptkrguide/hangry/main/hangry.py -o /tmp/hangry.py
-python3 /tmp/hangry.py install --dry-run   # 바뀌는 내용 먼저 보기 (아무것도 바꾸지 않음)
-python3 /tmp/hangry.py install
+curl -fsSLO https://raw.githubusercontent.com/chatgptkrguide/hangry/v0.3.1/hangry.py
+python3 hangry.py install --dry-run   # 바뀌는 내용 먼저 보기 (아무것도 바꾸지 않음)
+python3 hangry.py install
+rm hangry.py                          # 설치하면 ~/.hangry/hangry.py로 복사되므로 지워도 됩니다
 ```
 
-hangry는 설치할 때 자기 자신을 `~/.hangry/hangry.py`로 복사하므로, 받은 파일은 지워도 됩니다.
+받은 파일이 릴리스와 같은지 확인하고 싶다면 `shasum -a 256 hangry.py`(Linux는 `sha256sum hangry.py`)를 실행해 보세요. v0.3.1의 SHA-256은 `20149d5793ab1b909b22d03587b89bca57f589355763ca0d9b9a56c314aeed31`입니다.
 
 ### 2. CLI별 마무리
 
@@ -83,11 +84,11 @@ HANGRY_FORCE=hangry claude            # 남은 사용량과 상관없이 행그�
 ```
 
 ```
-hangry 0.3.0 · 남은 구독 사용량
+hangry 0.3.1 · 남은 구독 사용량
 
   Claude Code  ▰▰▰▰▱▱▱▱▱▱  42%  🍙 출출함  ·  5시간 한도 58% 사용 · 주간 한도 12% 사용 · 2시간 뒤 리셋 · 방금
   Codex        ▰▰▰▰▰▰▰▰▰▱  91%  🍱 배부름  ·  5시간 한도 9% 사용 · 주간 한도 4% 사용 · 3분 전
-  agy          ▰▰▰▰▰▰▰▱▱▱  73%  🍱 배부름  ·  Gemini Models 주간 한도 27% 사용 · 4일 뒤 리셋 · 방금
+  agy          ▰▰▰▰▰▰▰▱▱▱  73%  🍱 배부름  ·  Gemini 주간 한도 27% 사용 · 4일 뒤 리셋 · 방금
 ```
 
 (숫자는 예시입니다)
@@ -145,7 +146,7 @@ python3 ~/.hangry/hangry.py uninstall
 
 hangry가 넣은 항목만 골라서 빼고, statusline을 원래 명령으로 되돌린 뒤 `~/.hangry`를 지웁니다. 다른 훅과 설정은 건드리지 않습니다.
 
-`install`이 바꾸는 파일은 아래가 전부입니다. 기존 설정 파일을 바꾸기 전에는 `*.hangry-bak-<시각>` 백업을 남깁니다.
+`install`이 바꾸는 파일은 아래가 전부입니다. 기존 설정 파일을 바꾸기 전에는 원본과 같은 폴더에 같은 권한으로 `*.hangry-bak-<시각>` 백업을 남깁니다. 백업은 필요 없으면 지워도 됩니다.
 
 | 파일 | 변경 |
 |---|---|
@@ -224,7 +225,7 @@ agy를 재시작하세요. `agy plugin validate ~/.gemini/config/plugins/hangry`
 
 ## 기여
 
-이슈와 PR 모두 환영합니다. 버그를 제보할 때는 `python3 ~/.hangry/hangry.py status` 출력과 쓰는 CLI 버전을 같이 적어 주세요.
+보안 문제는 공개 이슈 대신 [SECURITY.md](SECURITY.md)의 방법으로 비공개 제보해 주세요. 그 밖의 이슈와 PR은 모두 환영합니다. 버그를 제보할 때는 `python3 ~/.hangry/hangry.py status` 출력과 쓰는 CLI 버전을 같이 적어 주세요.
 
 ```bash
 git clone https://github.com/chatgptkrguide/hangry.git && cd hangry
@@ -232,6 +233,10 @@ python3 -m unittest -v    # 실제 HOME은 건드리지 않고 임시 디렉터�
 ```
 
 파일은 `hangry.py` 하나이고 표준 라이브러리만 씁니다.
+
+## 상표 안내
+
+Claude와 Claude Code는 Anthropic, Codex와 ChatGPT는 OpenAI, Antigravity와 Gemini는 Google의 상표입니다. hangry는 이 회사들과 관계없는 개인 프로젝트이며, 각 도구가 공식으로 제공하는 훅 기능을 사용합니다.
 
 ## License
 

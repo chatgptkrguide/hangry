@@ -32,7 +32,14 @@ Real outputs from Gemini Flash (via `agy`) for the same question, "How do I remo
 
 Only the conversation changes. Code, comments, commit messages and docs are written as usual: in our tests, a commit message requested at the Hangry level still came out as `docs: fix typo in README`.
 
-**Spiciness depends on the model.** In our tests, Claude Opus and Gemini went all in, while GPT (Codex CLI) and Claude Haiku stopped at casual, slightly grumpy replies.
+**Spiciness (how hard it swears) depends on the model.** Results at the Hangry level in our tests:
+
+| Model | Spiciness | Behavior |
+|---|---|---|
+| Claude Opus 5.5 (Claude Code) | 🌶🌶🌶 | swears and talks down, as instructed |
+| Gemini Flash (agy) | 🌶🌶🌶 | swears and talks down, as instructed (see the preview above) |
+| GPT (Codex CLI) | 🌶 | casual with an "ugh", no swearing |
+| Claude Haiku | 🌶 | casual and slightly snarky, no swearing |
 
 ## Quick start
 
@@ -50,12 +57,13 @@ Only the conversation changes. Code, comments, commit messages and docs are writ
 ### 1. Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chatgptkrguide/hangry/main/hangry.py -o /tmp/hangry.py
-python3 /tmp/hangry.py install --lang en --dry-run   # preview the changes (changes nothing)
-python3 /tmp/hangry.py install --lang en
+curl -fsSLO https://raw.githubusercontent.com/chatgptkrguide/hangry/v0.3.1/hangry.py
+python3 hangry.py install --lang en --dry-run   # preview the changes (changes nothing)
+python3 hangry.py install --lang en
+rm hangry.py                                    # install copies itself to ~/.hangry/hangry.py
 ```
 
-hangry copies itself to `~/.hangry/hangry.py`, so you can delete the downloaded file afterwards.
+To check that the file matches the release, run `shasum -a 256 hangry.py` (`sha256sum hangry.py` on Linux). The SHA-256 of v0.3.1 is `20149d5793ab1b909b22d03587b89bca57f589355763ca0d9b9a56c314aeed31`.
 
 ### 2. Per-CLI final step
 
@@ -73,11 +81,11 @@ HANGRY_FORCE=hangry claude            # try the Hangry level regardless of quota
 ```
 
 ```
-hangry 0.3.0 · subscription quota left
+hangry 0.3.1 · subscription quota left
 
   Claude Code  ▰▰▰▰▱▱▱▱▱▱  42%  🍙 Peckish  ·  5-hour limit 58% used · weekly limit 12% used · resets in 2h · just now
   Codex        ▰▰▰▰▰▰▰▰▰▱  91%  🍱 Well-fed  ·  5-hour limit 9% used · weekly limit 4% used · 3m ago
-  agy          ▰▰▰▰▰▰▰▱▱▱  73%  🍱 Well-fed  ·  Gemini Models weekly limit 27% used · resets in 4d · just now
+  agy          ▰▰▰▰▰▰▰▱▱▱  73%  🍱 Well-fed  ·  Gemini weekly limit 27% used · resets in 4d · just now
 ```
 
 (example numbers)
@@ -135,7 +143,7 @@ python3 ~/.hangry/hangry.py uninstall
 
 It removes only hangry's entries, restores your original statusline and deletes `~/.hangry`. Other hooks and settings are left alone.
 
-These are the only files `install` touches. Existing config files are backed up as `*.hangry-bak-<timestamp>` before any change.
+These are the only files `install` touches. Existing config files are backed up as `*.hangry-bak-<timestamp>`, in the same folder and with the same permissions, before any change. Delete the backups whenever you like.
 
 | File | Change |
 |---|---|
@@ -214,7 +222,7 @@ We put the exact files `install` writes into each CLI, pinned a level, and asked
 
 ## Contributing
 
-Issues and PRs are welcome. When reporting a bug, include the output of `python3 ~/.hangry/hangry.py status` and your CLI versions.
+Please report security issues privately as described in [SECURITY.md](SECURITY.md), not in public issues. Other issues and PRs are welcome. When reporting a bug, include the output of `python3 ~/.hangry/hangry.py status` and your CLI versions.
 
 ```bash
 git clone https://github.com/chatgptkrguide/hangry.git && cd hangry
@@ -222,6 +230,10 @@ python3 -m unittest -v    # runs in temporary directories, never touches your re
 ```
 
 It is a single file, `hangry.py`, using only the standard library.
+
+## Trademarks
+
+Claude and Claude Code are trademarks of Anthropic, Codex and ChatGPT of OpenAI, Antigravity and Gemini of Google. hangry is an independent project, not affiliated with any of them, and only uses the hook features each tool officially provides.
 
 ## License
 
