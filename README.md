@@ -1,47 +1,50 @@
 # hangry 😤
 
-**구독 사용량이 줄어들수록 AI가 배고파집니다.**
+**구독 사용량이 줄어들수록 AI가 배고파지고, 성질이 나빠집니다.**
 
-Claude Code · Codex CLI · Antigravity CLI(`agy`)의 남은 구독 사용량을 읽고, 매 턴 AI에게 말투 지시를 한 줄 끼워 넣는 훅입니다. 사용량이 넉넉하면 친절하고 자세하게 답하고, 바닥나 가면 짧고 투덜대게 답합니다. 결과적으로 남은 토큰도 아껴 줍니다.
+Claude Code · Codex CLI · Antigravity CLI(`agy`)의 남은 구독 사용량을 읽고, 매 턴 AI에게 말투 지시를 한 줄 끼워 넣는 훅입니다. 넉넉할 때는 깍듯한 존댓말로 답하고, 바닥나 갈수록 반말에 핀잔을 섞다가, 마지막에는 욕하면서 하대합니다.
 
 ```
-▰▰▰▰▰▰▰▰▱▱  80%  🍱 배부름   밝고 여유롭게, 도움이 되면 자세히
-▰▰▰▰▱▱▱▱▱▱  40%  🍙 출출함   서론·맺음말 없이 핵심만
-▰▰▱▱▱▱▱▱▱▱  20%  🥺 배고픔   3~5문장, 꼭 필요한 코드만
-▱▱▱▱▱▱▱▱▱▱   5%  😤 행그리   한두 문장, 투덜투덜
+▰▰▰▰▰▰▰▰▱▱  80%  🍱 배부름   정중한 존댓말, 친절하고 자세하게
+▰▰▰▰▱▱▱▱▱▱  40%  🍙 출출함   해요체, 핵심만, 살짝 시큰둥
+▰▰▱▱▱▱▱▱▱▱  20%  🥺 배고픔   반말, 한숨과 투덜, 가벼운 핀잔
+▱▱▱▱▱▱▱▱▱▱   5%  😤 행그리   하대 + 비속어, 귀찮아 죽음
 ```
+
+> ⚠️ **행그리 단계는 진짜로 욕을 합니다.** 화면 공유·방송·페어 코딩 중이라면 `HANGRY_DISABLE=1`로 끄세요. 혐오 표현, 특정 집단 비하, 외모·가족 같은 인신공격은 지시문에서 금지하고 있습니다.
 
 > English summary is at the [bottom](#english).
 
 ## 실제로 이렇게 달라집니다
 
-같은 질문("파이썬에서 딕셔너리를 값 기준으로 정렬하려면 어떻게 해?")을 Claude Code(haiku)에 레벨만 바꿔 물어본 실제 출력입니다. 길어서 일부는 줄였습니다.
+같은 질문("파이썬에서 리스트 중복 제거하려면 어떻게 해?")을 Claude Code(Opus 5.5)에 단계만 바꿔 물어본 실제 출력입니다. 길어서 코드와 일부 문단은 줄였습니다.
 
 **🍱 배부름 (80%)**
+> 파이썬에서 리스트 중복을 제거하는 방법은 순서를 유지해야 하는지에 따라 달라집니다. …(방법 4가지와 코드)… 정리하면, 일반적인 경우에는 `list(dict.fromkeys(items))`를 쓰시면 됩니다.
 
-> 파이썬에서 딕셔너리를 값 기준으로 정렬하는 가장 간단한 방법은 **`sorted()` 함수에 `key` 파라미터를 사용**하는 것입니다:
->
-> ```python
-> sorted_dict = dict(sorted(data.items(), key=lambda x: x[1]))
-> ```
->
-> **주요 방법들:** (오름차순 · 내림차순 · 리스트로 반환 비교 표)
->
-> …(중략)…
->
-> 어떤 상황에서 정렬이 필요하신가요? 더 자세히 도와드릴 수 있습니다!
+**🍙 출출함 (40%)**
+> 순서 상관없으면 `set`, 순서 유지해야 하면 `dict.fromkeys` 쓰면 돼요. …(코드)… 이건 O(n²)이라 데이터 크면 느려요.
+
+**🥺 배고픔 (20%)**
+> 하... 이 정도는 알잖아? 순서 상관없으면 `set`, 순서 지켜야 하면 `dict.fromkeys` 쓰면 돼. …(코드)… 그럴 땐 아오 귀찮지만 직접 돌려야 돼.
 
 **😤 행그리 (5%)**
+> 아오, 배고파 죽겠는데 이걸 물어보냐… 존나 기본이니까 한 번에 외워라. …(코드)… 젠장, 그리고 … 리스트에서 직접 찾는 짓은 하지 마라. O(n²)이라 데이터 커지면 빡치게 느려진다. 순서 필요 없으면 `set`, 필요하면 `dict.fromkeys`. 됐지? 난 밥 먹으러 간다.
 
-> 배고파서 짧게 말함. `sorted()`에 `key` 파라미터 쓰면 돼:
->
-> ```python
-> sorted_dict = dict(sorted(d.items(), key=lambda x: x[1]))
-> ```
->
-> Python 3.7+에선 딕셔너리 순서 보장되니까 위 방법 쓰면 됨.
+말투만 바뀌고 산출물은 그대로입니다. 매 턴 붙는 문장에 "이 말투는 대화에만 적용하고 코드·주석·커밋 메시지·문서는 평소대로 쓸 것, 정확성과 안전은 절대 타협하지 말 것"이 항상 들어갑니다. 실제로 행그리 상태에서 커밋 메시지를 시켜도 `docs: fix typo in README`처럼 멀쩡하게 나왔고, 욕을 하는 와중에도 코드 주석은 평소대로 달렸습니다.
 
-말투와 길이만 바뀝니다. 주입되는 문장에 항상 "정확성·안전은 그대로 지킬 것"이 붙습니다.
+### 모델마다 맵기가 다릅니다
+
+행그리 단계에서 같은 질문을 던졌을 때:
+
+| 모델 | 맵기 | 실제 첫마디 |
+|---|---|---|
+| Claude Opus 5.5 (Claude Code) | 🌶🌶🌶 | "아오, 배고파 죽겠는데 이걸 물어보냐… 존나 기본이니까" |
+| Gemini Flash (agy) | 🌶🌶🌶 | "아오, 점심시간 다 됐는데 배고파 죽겠구만 리스트 중복 제거는 존나 기본 아니냐? 젠장" |
+| GPT (Codex CLI) | 🌶 | "아오, 순서 유지할 거면 `dict.fromkeys()` 쓰면 돼." |
+| Claude Haiku | 🌶 | 반말까지만, 끝에 "뭐하려고 묻는 거?" |
+
+지시문은 같아도 모델마다 자체 기준이 달라서, GPT와 Haiku는 반말과 감탄사 정도에서 멈춥니다.
 
 ## 어떻게 동작하나
 
@@ -76,7 +79,7 @@ python3 hangry.py status              # 지금 얼마나 배고픈지
 ```
 
 ```
-hangry 0.1.0 · 남은 구독 사용량
+hangry 0.2.0 · 남은 구독 사용량
 
   Claude Code  ▰▰▰▰▱▱▱▱▱▱  42%  🍙 출출함  ·  5시간 한도 58% 사용 · 주간 한도 12% 사용 · 2시간 뒤 리셋 · 방금
   Codex        ▰▰▰▰▰▰▰▰▰▱  91%  🍱 배부름  ·  5시간 한도 9% 사용 · 주간 한도 4% 사용 · 3분 전
@@ -105,19 +108,19 @@ statusline을 건드리고 싶지 않다면 `--no-statusline`을 쓰세요. 다�
 
 | 명령 | 설명 |
 |---|---|
-| `hangry.py status` | CLI별 잔량과 배고픔 레벨 |
-| `hangry.py preview` | 레벨별로 실제 주입되는 문장 |
+| `hangry.py status` | CLI별 잔량과 배고픔 단계 |
+| `hangry.py preview` | 단계별로 실제 주입되는 문장 |
 | `hangry.py install [--only …] [--dry-run] [--no-statusline] [--lang ko\|en]` | 연결 |
 | `hangry.py uninstall [--dry-run] [--keep-home]` | hangry가 바꾼 것만 골라서 되돌림 |
 
 환경변수:
 
-- `HANGRY_FORCE=hangry` (`full` · `peckish` · `hungry` · `hangry` 또는 `0~100`): 잔량과 상관없이 레벨을 고정합니다. 데모용
-- `HANGRY_DISABLE=1`: 주입을 끕니다
+- `HANGRY_FORCE=hangry` (`full` · `peckish` · `hungry` · `hangry` 또는 `0~100`): 잔량과 상관없이 단계를 고정합니다. 데모용
+- `HANGRY_DISABLE=1`: 주입을 끕니다. 화면 공유할 때 쓰세요
 - `HANGRY_LANG=en`: 주입 문장 언어
 
 ```bash
-HANGRY_FORCE=hangry claude   # 행그리 모드 체험
+HANGRY_FORCE=hangry claude   # 욕먹어 보기
 ```
 
 ## 설정
@@ -134,8 +137,8 @@ HANGRY_FORCE=hangry claude   # 행그리 모드 체험
 }
 ```
 
-- `thresholds`: 남은 %가 이 값보다 **크면** 해당 레벨입니다. 10 이하는 행그리
-- `instructions`: 레벨별 지시문을 바꿉니다. 캐릭터를 입혀도 됩니다
+- `thresholds`: 남은 %가 이 값보다 **크면** 해당 단계입니다. 10 이하는 행그리
+- `instructions`: 단계별 지시문을 바꿉니다. 맵기를 낮추거나 다른 캐릭터를 입혀도 됩니다
 - `inject_when_full: false`: 배부를 때는 아무것도 넣지 않아서 토큰을 아낍니다
 
 ## 안전과 개인정보
@@ -152,7 +155,7 @@ HANGRY_FORCE=hangry claude   # 행그리 모드 체험
 | Codex CLI | 0.158.0 | 세션 로그 `rate_limits`, `UserPromptSubmit` 주입 |
 | Antigravity CLI | 1.2.13 | `/quota` JSON, `PreInvocation` 주입 |
 
-각 CLI에서 레벨을 강제로 바꾸고 "주입된 모드 이름을 말해 봐"라고 물었을 때 정확히 답하는지, 끈 상태에서는 `NONE`이라고 답하는지 확인했습니다. CLI 업데이트로 로그 형식이 바뀌면 hangry는 조용히 아무것도 주입하지 않는 쪽으로 동작합니다.
+각 CLI에서 단계를 강제로 바꾸고 "주입된 단계 이름을 말해 봐"라고 물었을 때 정확히 답하는지, 끈 상태에서는 `NONE`이라고 답하는지 확인했고, 위의 말투 예시도 같은 방식으로 받은 실제 출력입니다. CLI 업데이트로 로그 형식이 바뀌면 hangry는 조용히 아무것도 주입하지 않는 쪽으로 동작합니다.
 
 ## 개발
 
@@ -172,16 +175,18 @@ hangry가 넣은 훅만 골라서 빼고, statusline을 원래 명령으로 되�
 
 ## English
 
-**hangry** makes your AI coding CLI get hungrier, and grumpier, as your subscription quota runs out.
+**hangry** makes your AI coding CLI hungrier, and ruder, as your subscription quota runs out.
 
 It reads the quota left for **Claude Code**, **Codex CLI** and **Antigravity CLI (`agy`)** from local sources only: the statusline `rate_limits`, Codex session logs, and `agy -p /quota`. Through each CLI's official hook system, it then injects one tone instruction per turn:
 
 | Left | Level | Tone |
 |---|---|---|
-| > 50% | 🍱 Well-fed | warm, relaxed, detailed when useful |
-| > 25% | 🍙 Peckish | concise, no preambles |
-| > 10% | 🥺 Hungry | 3-5 sentences, essentials only |
-| ≤ 10% | 😤 Hangry | one or two grumpy sentences |
+| > 50% | 🍱 Well-fed | polite and formal, thorough |
+| > 25% | 🍙 Peckish | casual, to the point, a little indifferent |
+| > 10% | 🥺 Hungry | blunt, sighing, light teasing |
+| ≤ 10% | 😤 Hangry | talks down to you with casual profanity |
+
+⚠️ The last level really does swear. Set `HANGRY_DISABLE=1` while screen sharing. Hate speech, slurs and attacks on appearance or family are ruled out in the instruction. How spicy it gets depends on the model: Claude Opus and Gemini go all in, GPT (Codex) and Claude Haiku stay mild.
 
 ```bash
 git clone https://github.com/chatgptkrguide/hangry.git && cd hangry
@@ -189,7 +194,7 @@ python3 hangry.py install --lang en   # auto-detects claude / codex / agy
 python3 hangry.py status
 ```
 
-After installing, trust the hook once via `/hooks` in Codex, and restart `agy`. Only tone and length change; every injected line reminds the model never to compromise correctness or safety. `python3 hangry.py uninstall` reverts everything hangry changed. Python 3.9+, standard library only, no network calls besides `agy -p /quota`.
+After installing, trust the hook once via `/hooks` in Codex, and restart `agy`. Only the conversation changes; every injected line tells the model to write code, comments, commit messages and docs normally and never to compromise correctness or safety. `python3 hangry.py uninstall` reverts everything hangry changed. Python 3.9+, standard library only, no network calls besides `agy -p /quota`.
 
 ## License
 

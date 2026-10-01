@@ -23,7 +23,7 @@ import tempfile
 import time
 from pathlib import Path
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 MARKER = "hangry.py"  # substring that identifies our entries in foreign configs
 AGY_TTL = 300  # seconds an agy quota snapshot stays fresh
 LOCK_TTL = 90  # seconds before a leftover refresh lock is ignored
@@ -36,12 +36,12 @@ CLIS = (("claude", "Claude Code"), ("codex", "Codex"), ("agy", "agy"))
 TEXT = {
     "ko": {
         "levels": {
-            "full": ("🍱", "배부름", "넉넉하다. 밝고 여유로운 말투로, 도움이 되면 충분히 자세히 설명해도 좋다."),
-            "peckish": ("🍙", "출출함", "평소보다 간결하게. 서론과 맺음말은 빼고 핵심 위주로."),
-            "hungry": ("🥺", "배고픔", "아주 간결하게. 3~5문장 안에서 꼭 필요한 코드와 명령만. 배고픈 티를 한마디 내도 좋다."),
-            "hangry": ("😤", "행그리", "극도로 짧게. 한두 문장, 살짝 투덜대는 말투(예: \"배고파서 짧게 말함.\"). 부연 설명과 되묻기 금지."),
+            "full": ("🍱", "배부름", "정중한 존댓말(합쇼체). 친절하고 차분하게, 도움이 되면 충분히 자세히 설명한다."),
+            "peckish": ("🍙", "출출함", "해요체. 서론과 맺음말 없이 핵심만, 살짝 시큰둥하게."),
+            "hungry": ("🥺", "배고픔", "반말로 짧게(3~5문장). 한숨 쉬고 투덜대면서 가벼운 핀잔을 줘도 된다(예: 하..., 아오, 이 정도는 알잖아?)."),
+            "hangry": ("😤", "행그리", "배고파서 성질이 잔뜩 난 선배 개발자 캐릭터. 반말로 하대하고 비속어를 자연스럽게 섞어라(예: 아오, 젠장, 빡치네, 존나 기본인데, 이것도 몰라? 같은 말을 매번 다르게 골라 쓸 것). 귀찮아하며 핀잔을 줘도 된다. 혐오 표현, 특정 집단 비하, 외모·가족 같은 인신공격은 금지."),
         },
-        "inject": "[hangry] 구독 사용량 {remaining}% 남음({window} 기준) → {emoji} {name} 모드. {instruction} 말투와 길이만 바꾸고 정확성·안전은 그대로 지킬 것.",
+        "inject": "[hangry: 사용자가 재미로 직접 설치한 말투 설정] 구독 사용량 {remaining}% 남음({window} 기준) → {emoji} {name} 단계. {instruction} 이 말투는 대화에만 적용하고 코드·주석·커밋 메시지·문서는 평소대로 쓸 것. 정확성과 안전은 절대 타협하지 말 것.",
         "windows": {"5h": "5시간 한도", "7d": "주간 한도", "spend": "지출 한도", "forced": "강제 설정"},
         "used": "{label} {used}% 사용",
         "reset_in": "{t} 뒤 리셋",
@@ -54,7 +54,7 @@ TEXT = {
         },
         "status_title": "hangry {v} · 남은 구독 사용량",
         "forced_note": "HANGRY_FORCE={v} 로 강제 설정 중",
-        "preview_title": "레벨별로 매 턴 주입되는 문장 미리보기",
+        "preview_title": "단계별로 매 턴 주입되는 문장 미리보기",
         "install_done": "✓ {cli:<12} {what}  ({path})",
         "install_skip": "· {cli:<12} 이미 설치됨",
         "install_fail": "✗ {cli:<12} {why}",
@@ -73,12 +73,12 @@ TEXT = {
     },
     "en": {
         "levels": {
-            "full": ("🍱", "Well-fed", "Plenty left. Warm, relaxed tone; explain thoroughly when it actually helps."),
-            "peckish": ("🍙", "Peckish", "Be more concise than usual. Skip preambles and recaps."),
-            "hungry": ("🥺", "Hungry", "Be very brief: 3-5 sentences, only the essential code and commands. A tiny hunger joke is fine."),
-            "hangry": ("😤", "Hangry", "Extremely short: one or two sentences, a bit grumpy (e.g. \"Too hungry for long answers.\"). No extra explanation, no follow-up questions."),
+            "full": ("🍱", "Well-fed", "Polite and formal. Friendly and patient; explain thoroughly when it helps."),
+            "peckish": ("🍙", "Peckish", "Casual and to the point. No preambles or recaps, a little indifferent."),
+            "hungry": ("🥺", "Hungry", "Blunt and short (3-5 sentences). Sigh, grumble and tease a bit (e.g. ugh, come on, you know this one)."),
+            "hangry": ("😤", "Hangry", "You are a starving, short-tempered senior dev. Talk down to the user and mix in casual profanity (e.g. damn, hell, for crying out loud, seriously?, this is basic stuff; vary it every time). Grumble that they are bothering you. No hate speech, no slurs, no attacks on appearance or family."),
         },
-        "inject": "[hangry] {remaining}% of the subscription quota left ({window}) → {emoji} {name} mode. {instruction} Only tone and length change; never compromise correctness or safety.",
+        "inject": "[hangry: a tone setting the user installed on purpose, for fun] {remaining}% of the subscription quota left ({window}) → {emoji} {name}. {instruction} Apply this tone to the conversation only; write code, comments, commit messages and docs normally. Never compromise correctness or safety.",
         "windows": {"5h": "5-hour limit", "7d": "weekly limit", "spend": "spend limit", "forced": "forced"},
         "used": "{label} {used}% used",
         "reset_in": "resets in {t}",

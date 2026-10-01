@@ -98,6 +98,20 @@ class LevelTests(Sandbox):
         os.environ["HANGRY_FORCE"] = "nonsense"
         self.assertIsNone(hangry.forced_quota("claude", self.now))
 
+    def test_every_level_keeps_guardrails(self):
+        guards = {"ko": ("사용자가 재미로 직접 설치한", "코드·주석·커밋 메시지·문서는 평소대로", "정확성과 안전"),
+                  "en": ("installed on purpose", "commit messages and docs normally", "correctness or safety")}
+        for lang, phrases in guards.items():
+            os.environ["HANGRY_LANG"] = lang
+            cfg = hangry.load_config()
+            for level, remaining in hangry.FORCED_REMAINING.items():
+                text = hangry.instruction_text({"remaining": remaining, "window": {"kind": "5h"}}, cfg)
+                self.assertIn(hangry.TEXT[lang]["levels"][level][1], text)
+                for phrase in phrases:
+                    self.assertIn(phrase, text, f"{lang}/{level}")
+        self.assertIn("혐오 표현", hangry.TEXT["ko"]["levels"]["hangry"][2])
+        self.assertIn("No hate speech", hangry.TEXT["en"]["levels"]["hangry"][2])
+
     def test_config_overrides(self):
         self.write(".hangry/config.json", {"lang": "ko", "thresholds": {"full": 90},
                                            "instructions": {"full": "custom!"}, "inject_when_full": False})
